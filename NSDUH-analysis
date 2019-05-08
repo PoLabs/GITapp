@@ -1,0 +1,553 @@
+setwd("/home/ubuntu/NSDUH")
+library(data.table)
+pcklibs <- c("dplyr")
+lapply(pcklibs, require, character.only=TRUE)
+
+# NSDUH2002 <- read.table(file = 'NSDUH2002.tsv', header = TRUE)
+# NSDUH2003 <- read.table(file = 'NSDUH2003.tsv', header = TRUE)
+# NSDUH2004 <- read.table(file = 'NSDUH2004.tsv', header = TRUE)
+NSDUH2005 <- fread(file = 'NSDUH2005.tsv', header = TRUE)
+NSDUH2006 <- fread(file = 'NSDUH2006.tsv', header = TRUE)
+NSDUH2007 <- fread(file = 'NSDUH2007.tsv', header = TRUE)
+NSDUH2008 <- fread(file = 'NSDUH2008.tsv', header = TRUE)
+NSDUH2009 <- fread(file = 'NSDUH2009.tsv', header = TRUE)
+NSDUH2010 <- fread(file = 'NSDUH2010.tsv', header = TRUE)
+NSDUH2011 <- fread(file = 'NSDUH2011.tsv', header = TRUE)
+NSDUH2012 <- fread(file = 'NSDUH2012.tsv', header = TRUE)
+NSDUH2013 <- fread(file = 'NSDUH2013.tsv', header = TRUE)
+NSDUH2014 <- fread(file = 'NSDUH2014.tsv', header = TRUE)
+
+allNSDUH <- dplyr::bind_rows(NSDUH2005, NSDUH2006, NSDUH2007, NSDUH2008, NSDUH2009, NSDUH2010, NSDUH2011, NSDUH2012, NSDUH2013, )
+cocNSDUH <- allNSDUH
+rm(NSDUH2005, NSDUH2006, NSDUH2007, NSDUH2008, NSDUH2009, NSDUH2010, NSDUH2011, NSDUH2012, NSDUH2013, NSDUH2014)
+
+
+##############
+#Variable prep
+#############
+cocNSDUH$LIFEHAL <- 0
+cocNSDUH$LIFEHAL[cocNSDUH$HALNEWA == 616 | cocNSDUH$HALNEWB == 616 | cocNSDUH$HALNEWC == 616 | cocNSDUH$HALNEWD == 616 | cocNSDUH$HALNEWE == 616 | cocNSDUH$HALNEWA == 6103 | cocNSDUH$HALNEWB == 6103 | cocNSDUH$HALNEWC == 6103 | cocNSDUH$HALNEWD == 6103 | cocNSDUH$HALNEWE == 6103 | cocNSDUH$HALNEWA == 6077 | cocNSDUH$HALNEWB == 6077 | cocNSDUH$HALNEWC == 6077 | cocNSDUH$HALNEWD == 6077 | cocNSDUH$HALNEWE == 6077 | cocNSDUH$LSDFLAG == 1 | cocNSDUH$MESC2 == 1 | cocNSDUH$PEYOTE2 == 1 | cocNSDUH$PSILCY2 == 1] <- 1
+cocNSDUH$OPFLAG <- 0
+cocNSDUH$OPFLAG[cocNSDUH$HERFLAG == 1 | cocNSDUH$ANLFLAG == 1] <- 1
+#xtabs( ~ LIFEHAL + OPFLAG, + subset(cocNSDUH, CATAG6 != 1 & COCFLAG != 0))
+cocNSDUH$ABUSEOP[cocNSDUH$ABUSEHER == 1 | cocNSDUH$ABUSEANL == 1] <- 1
+cocNSDUH$DEPNDOP[cocNSDUH$DEPNDHER == 1 | cocNSDUH$DEPNDANL == 1] <- 1
+
+#check age varible 
+xtabs( ~ LIFEHAL + CATAG6, + subset(cocNSDUH, CATAG6 != 1 & COCFLAG == 1))
+#check marriage varaible: 1=married, 2=widowed, 3=divorced/seperated, 4=never married, 99=legit skip(<14yr old
+cocNSDUH$IRMARIT[cocNSDUH$IRMARIT >= 4] <- 0
+cocNSDUH$IRMARIT[cocNSDUH$IRMARIT == 1] <- 4
+cocNSDUH$IRMARIT[cocNSDUH$IRMARIT == 3] <- 2
+cocNSDUH$IRMARIT[cocNSDUH$IRMARIT == 2] <- 1
+cocNSDUH$IRMARIT[cocNSDUH$IRMARIT == 4] <- 2
+
+xtabs( ~ LIFEHAL + RKFQRSKY, + subset(cocNSDUH, CATAG6 != 1 & COCFLAG == 1))
+cocNSDUH$RKFQRSKY[cocNSDUH$RKFQRSKY > 4] <- NA
+
+cocNSDUH$IRECSRC[cocNSDUH$IRECSRC == 9] <- 0
+cocNSDUH$IRECSRC[cocNSDUH$IRECSRC == 1] <- 4
+cocNSDUH$IRECSRC[cocNSDUH$IRECSRC == 3] <- 1
+cocNSDUH$IRECSRC[cocNSDUH$IRECSRC == 4] <- 3
+
+cocNSDUH$IRCOCRC[cocNSDUH$IRCOCRC == 9] <- 0
+cocNSDUH$IRCOCRC[cocNSDUH$IRCOCRC == 1] <- 4
+cocNSDUH$IRCOCRC[cocNSDUH$IRCOCRC == 3] <- 1
+cocNSDUH$IRCOCRC[cocNSDUH$IRCOCRC == 4] <- 3
+cocNSDUH$IRMJRC[cocNSDUH$IRMJRC == 9] <- 0
+cocNSDUH$IRMJRC[cocNSDUH$IRMJRC == 1] <- 4
+cocNSDUH$IRMJRC[cocNSDUH$IRMJRC == 3] <- 1
+cocNSDUH$IRMJRC[cocNSDUH$IRMJRC == 4] <- 3
+cocNSDUH$IRTRNRC[cocNSDUH$IRTRNRC == 9] <- 0
+cocNSDUH$IRTRNRC[cocNSDUH$IRTRNRC == 1] <- 4
+cocNSDUH$IRTRNRC[cocNSDUH$IRTRNRC == 3] <- 1
+cocNSDUH$IRTRNRC[cocNSDUH$IRTRNRC == 4] <- 3
+
+cocNSDUH$IRINHRC[cocNSDUH$IRINHRC == 9] <- 0
+cocNSDUH$IRINHRC[cocNSDUH$IRINHRC == 1] <- 4
+cocNSDUH$IRINHRC[cocNSDUH$IRINHRC == 3] <- 1
+cocNSDUH$IRINHRC[cocNSDUH$IRINHRC == 4] <- 3
+cocNSDUH$IRSEDRC[cocNSDUH$IRSEDRC == 9] <- 0
+cocNSDUH$IRSEDRC[cocNSDUH$IRSEDRC == 1] <- 4
+cocNSDUH$IRSEDRC[cocNSDUH$IRSEDRC == 3] <- 1
+cocNSDUH$IRSEDRC[cocNSDUH$IRSEDRC == 4] <- 3
+cocNSDUH$IROPRC <- NA
+cocNSDUH$IROPRC[cocNSDUH$IRANLRC == 9 | cocNSDUH$IRHERRC == 9 | cocNSDUH$IROXYRC == 9] <- 0
+cocNSDUH$IROPRC[cocNSDUH$IRANLRC == 1 | cocNSDUH$IRHERRC == 1 | cocNSDUH$IROXYRC == 1] <- 4
+cocNSDUH$IROPRC[cocNSDUH$IRANLRC == 3 | cocNSDUH$IRHERRC == 3 | cocNSDUH$IROXYRC == 3] <- 1
+cocNSDUH$IROPRC[cocNSDUH$IROPRC == 4] <- 3
+cocNSDUH$IROPRC[cocNSDUH$IRANLRC == 2 | cocNSDUH$IRHERRC == 2 | cocNSDUH$IROXYRC == 2] <- 2
+
+cocNSDUH$IRHALRC[cocNSDUH$IRHALRC == 9 | cocNSDUH$IRLSDRC == 9] <- 0
+cocNSDUH$IRHALRC[cocNSDUH$IRHALRC == 1 | cocNSDUH$IRLSDRC == 1] <- 4
+cocNSDUH$IRHALRC[cocNSDUH$IRHALRC == 3 | cocNSDUH$IRLSDRC == 3] <- 1
+cocNSDUH$IRHALRC[cocNSDUH$IRHALRC == 4 | cocNSDUH$IRLSDRC == 4] <- 3
+cocNSDUH$IRPCPRC[cocNSDUH$IRPCPRC == 9] <- 0
+cocNSDUH$IRPCPRC[cocNSDUH$IRPCPRC == 1] <- 4
+cocNSDUH$IRPCPRC[cocNSDUH$IRPCPRC == 3] <- 1
+cocNSDUH$IRPCPRC[cocNSDUH$IRPCPRC == 4] <- 3
+
+cocNSDUH$IRSTMRC[cocNSDUH$IRSTMRC == 9 | cocNSDUH$IRMTHRC == 9] <- 0
+cocNSDUH$IRSTMRC[cocNSDUH$IRSTMRC == 1 | cocNSDUH$IRMTHRC == 1] <- 4
+cocNSDUH$IRSTMRC[cocNSDUH$IRSTMRC == 3 | cocNSDUH$IRMTHRC == 3] <- 1
+cocNSDUH$IRSTMRC[cocNSDUH$IRSTMRC == 4 | cocNSDUH$IRMTHRC == 4] <- 3
+
+cocNSDUH$newRACE <- NA
+cocNSDUH$newRACE[cocNSDUH$NEWRACE2 == 1] <- 1
+cocNSDUH$newRACE[cocNSDUH$NEWRACE2 == 2] <- 3
+cocNSDUH$newRACE[cocNSDUH$NEWRACE2 == 3] <- 6
+cocNSDUH$newRACE[cocNSDUH$NEWRACE2 == 4] <- 7
+cocNSDUH$newRACE[cocNSDUH$NEWRACE2 == 5] <- 4
+cocNSDUH$newRACE[cocNSDUH$NEWRACE2 == 6] <- 5
+cocNSDUH$newRACE[cocNSDUH$NEWRACE2 == 7] <- 2
+
+cocNSDUH$CCDAY <- 0
+cocNSDUH$CCDAYPYR[is.na(cocNSDUH$CCDAYPYR)] <- 0
+cocNSDUH$CCDAY <- ifelse(cocNSDUH$CCDAYPYR >= 1 & cocNSDUH$CCDAYPYR <= 365, cocNSDUH$CCDAYPYR, cocNSDUH$CCDAY)
+cocNSDUH$CCDAYPMO[is.na(cocNSDUH$CCDAYPMO)] <- 0
+cocNSDUH$CCDAY <- ifelse(cocNSDUH$CCDAYPMO >= 1 & cocNSDUH$CCDAYPMO <= 25, cocNSDUH$CCDAYPMO*12, cocNSDUH$CCDAY)
+cocNSDUH$CCDAYPWK[is.na(cocNSDUH$CCDAYPWK)] <- 0
+cocNSDUH$CCDAY <- ifelse(cocNSDUH$CCDAYPWK >= 1 & cocNSDUH$CCDAYPWK <= 7, cocNSDUH$CCDAYPWK*52, cocNSDUH$CCDAY)
+xtabs(~cocNSDUH$CCDAY) 
+
+library(survey)  #needs to install the survey package
+options( survey.lonely.psu = "adjust" )
+cocNSDUH$NEWANALWT_C = cocNSDUH$ANALWT_C/6
+desg <- svydesign(id = ~VEREP , strata = ~VESTR , weights = ~NEWANALWT_C , data = cocNSDUH , nest = TRUE )
+#MUST BE RERUN ANYTIME DATA IN cocNSDUH IS CHANGED
+
+
+
+#calculate number of adult cocaine users and percent of adults who have used cocaine
+svymean(~ as.character(COCFLAG), subset(desg, CATAG6 != 1), na.rm = TRUE)
+#calculate cocaine user breakdown of psychedelic use
+xtabs( ~COCFLAG + LIFEHAL, + subset(cocNSDUH, CATAG6 != 1 & COCFLAG == 1))
+svymean(~interaction(LIFEHAL, COCFLAG), subset(desg, CATAG6 !=1 & COCFLAG == 1), na.rm = TRUE)
+#calculate cocaine abuse/dependence in users 
+xtabs( ~ABUSECOC, +subset(cocNSDUH, CATAG6 != 1 & COCFLAG == 1))
+xtabs( ~DEPNDCOC, +subset(cocNSDUH, CATAG6 != 1 & COCFLAG == 1))
+svymean(~ABUSECOC, subset(desg, CATAG6 != 1 & COCFLAG == 1), na.rm = TRUE)
+svymean(~DEPNDCOC, subset(desg, CATAG6 != 1 & COCFLAG == 1), na.rm = TRUE)
+#calculate psych abuse/dependence in users
+xtabs( ~ABUSEHAL, +subset(cocNSDUH, CATAG6 != 1 & HALFLAG == 1))
+xtabs( ~DEPNDHAL, +subset(cocNSDUH, CATAG6 != 1 & HALFLAG == 1))
+svymean(~ABUSEHAL, subset(desg, CATAG6 != 1 & HALFLAG == 1), na.rm = TRUE)
+svymean(~DEPNDHAL, subset(desg, CATAG6 != 1 & HALFLAG == 1), na.rm = TRUE)
+#DEMOGRAPHICS
+#AGE
+svymean(~as.character(CATAG6), subset(desg, CATAG6 != 1 & ABODCOC == 1 & COCFLAG == 1), na.rm = TRUE)
+xtabs(~CATAG6, subset(cocNSDUH, CATAG6 != 1 & LIFEHAL == 1 & COCFLAG == 1))
+svymean(~as.character(CATAG6), subset(desg, CATAG6 != 1 & ABODCOC == 0 & COCFLAG == 1), na.rm = TRUE)
+#gender
+svymean(~as.character(IRSEX), subset(desg, CATAG6 != 1 & ABODCOC == 1 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(IRSEX), subset(desg, CATAG6 != 1 & ABODCOC == 0 & COCFLAG == 1), na.rm = TRUE)
+#race
+svymean(~as.character(NEWRACE2), subset(desg, CATAG6 != 1 & ABODCOC == 1 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(NEWRACE2), subset(desg, CATAG6 != 1 & ABODCOC == 0 & COCFLAG == 1), na.rm = TRUE)
+#educ
+svymean(~as.character(EDUCCAT2), subset(desg, CATAG6 != 1 & ABODCOC == 1 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(EDUCCAT2), subset(desg, CATAG6 != 1 & ABODCOC == 0 & COCFLAG == 1), na.rm = TRUE)
+#income
+svymean(~as.character(INCOME), subset(desg, CATAG6 != 1 & ABODCOC == 1 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(INCOME), subset(desg, CATAG6 != 1 & ABODCOC == 0 & COCFLAG == 1), na.rm = TRUE)
+#mar status
+svymean(~as.character(IRMARIT), subset(desg, CATAG6 != 1 & ABODCOC == 1 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(IRMARIT), subset(desg, CATAG6 != 1 & ABODCOC == 0 & COCFLAG == 1), na.rm = TRUE)
+#risky
+svymean(~as.character(RKFQRSKY), subset(desg, CATAG6 != 1 & ABODCOC == 1 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(RKFQRSKY), subset(desg, CATAG6 != 1 & ABODCOC == 0 & COCFLAG == 1), na.rm = TRUE)
+#illict sub
+svymean(~as.character(MRJFLAG), subset(desg, CATAG6 != 1 & ABODCOC == 1 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(MRJFLAG), subset(desg, CATAG6 != 1 & ABODCOC == 0 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(STMFLAG), subset(desg, CATAG6 != 1 & ABODCOC == 1 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(STMFLAG), subset(desg, CATAG6 != 1 & ABODCOC == 0 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(TRQFLAG), subset(desg, CATAG6 != 1 & ABODCOC == 1 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(TRQFLAG), subset(desg, CATAG6 != 1 & ABODCOC == 0 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(INHFLAG), subset(desg, CATAG6 != 1 & ABODCOC == 1 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(INHFLAG), subset(desg, CATAG6 != 1 & ABODCOC == 0 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(ECSFLAG), subset(desg, CATAG6 != 1 & ABODCOC == 1 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(ECSFLAG), subset(desg, CATAG6 != 1 & ABODCOC == 0 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(PCPFLAG), subset(desg, CATAG6 != 1 & ABODCOC == 1 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(PCPFLAG), subset(desg, CATAG6 != 1 & ABODCOC == 0 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(SEDFLAG), subset(desg, CATAG6 != 1 & ABODCOC == 1 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(SEDFLAG), subset(desg, CATAG6 != 1 & ABODCOC == 0 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(OPFLAG), subset(desg, CATAG6 != 1 & ABODCOC == 1 & COCFLAG == 1), na.rm = TRUE)
+svymean(~as.character(OPFLAG), subset(desg, CATAG6 != 1 & ABODCOC == 0 & COCFLAG == 1), na.rm = TRUE)
+
+svychisq(~CATAG6+LIFEHAL, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~CATAG6+ABODCOC, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~IRSEX+LIFEHAL, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~IRSEX+ABODCOC, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~NEWRACE2+LIFEHAL, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~NEWRACE2+ABODCOC, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~EDUCCAT2+LIFEHAL, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~EDUCCAT2+ABODCOC, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~INCOME+LIFEHAL, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~INCOME+ABODCOC, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~IRMARIT+LIFEHAL, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~IRMARIT+ABODCOC, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~RKFQRSKY+LIFEHAL, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~RKFQRSKY+ABODCOC, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+
+svychisq(~MRJFLAG+LIFEHAL, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~MRJFLAG+ABODCOC, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~STMFLAG+LIFEHAL, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~STMFLAG+ABODCOC, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~TRQFLAG+LIFEHAL, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~TRQFLAG+ABODCOC, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~INHFLAG+LIFEHAL, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~INHFLAG+ABODCOC, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~ECSFLAG+LIFEHAL, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~ECSFLAG+ABODCOC, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~PCPFLAG+LIFEHAL, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~PCPFLAG+ABODCOC, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~SEDFLAG+LIFEHAL, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~SEDFLAG+ABODCOC, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~OPFLAG+LIFEHAL, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+svychisq(~OPFLAG+ABODCOC, design=desg, statistic="F", subset(desg, CATAG6 > 1 & COCFLAG>0), na.rm=TRUE)
+
+xtabs(~ABODHAL+ABODCOC, +subset(cocNSDUH, CATAG6>1))
+xtabs(~ABODHAL+ABODMRJ, +subset(cocNSDUH, CATAG6>1))
+xtabs(~ABODHAL+ABODSTM, +subset(cocNSDUH, CATAG6>1))
+xtabs(~ABODHAL+ABODTRQ, +subset(cocNSDUH, CATAG6>1))
+xtabs(~ABODHAL+ABODINH, +subset(cocNSDUH, CATAG6>1))
+xtabs(~ABODHAL+ABODOP, +subset(cocNSDUH, CATAG6>1))
+xtabs(~ABODHAL+ABODSED, +subset(cocNSDUH, CATAG6>1))
+xtabs(~ABODHAL+ABODOP, +subset(cocNSDUH, CATAG6>1))
+xtabs(~ABODHAL+ABODALC, +subset(cocNSDUH, CATAG6>1))
+#pcp? ecs? 
+
+svymean(~interaction(SEX, PSYCHCASE), subset(desg, ADULTAGE >0 ), na.rm = TRUE)
+svymean(~as.character(SEX), subset(desg, ADULTAGE >0 & PSYCHCASE != 0), na.rm = TRUE)
+
+
+
+
+
+#creates past year MDE varaible
+allNSDUH$MDEyr <- 0
+allNSDUH$MDEyr[allNSDUH$YEAR == 2005 | allNSDUH$YEAR == 2006 | allNSDUH$YEAR == 2007 | allNSDUH$YEAR == 2008] <- allNSDUH$AJAMDEYR
+allNSDUH$MDEyr[allNSDUH$YEAR == 2009 | allNSDUH$YEAR == 2010 | allNSDUH$YEAR == 2011 | allNSDUH$YEAR == 2012 | allNSDUH$YEAR == 2013] <- allNSDUH$AMDEYR
+
+
+#regression: of COCabod ~ HALrecency + education + income +  mental health + race + sex
+
+
+
+
+
+
+
+
+
+
+
+
+glmCOCd <- svyglm(DEPNDCOC~LIFEHAL+CATAG6+NEWRACE2+EDUCCAT2+INCOME+IRSEX+IRMARIT+RKFQRSKY+OPFLAG+STMFLAG+MRJFLAG+TRQFLAG+INHFLAG+SEDFLAG+PCPFLAG+ECSFLAG, design=desg, family=binomial(), subset=CATAG6 != 1 & COCFLAG !=0)
+glmCOCa <- svyglm(ABUSECOC~LIFEHAL+CATAG6+NEWRACE2+EDUCCAT2+INCOME+IRSEX+IRMARIT+RKFQRSKY+OPFLAG+STMFLAG+MRJFLAG+TRQFLAG+INHFLAG+SEDFLAG+PCPFLAG+ECSFLAG, design=desg, family=binomial(), subset=CATAG6 != 1 & COCFLAG !=0)
+
+summary(glmNAME)
+exp(coef(glmCCDAY))
+exp(confint(glmCCDAY))
+
+# cocNSDUH$AG1 <- ifelse(cocNSDUH$CATAG6 == 1, 1, 0)
+# cocNSDUH$AG2 <- ifelse(cocNSDUH$CATAG6 == 2, 1, 0)
+# cocNSDUH$AG3 <- ifelse(cocNSDUH$CATAG6 == 3, 1, 0)
+# cocNSDUH$AG4 <- ifelse(cocNSDUH$CATAG6 == 4, 1, 0)
+# cocNSDUH$AG5 <- ifelse(cocNSDUH$CATAG6 == 5, 1, 0)
+# cocNSDUH$AG6 <- ifelse(cocNSDUH$CATAG6 == 6, 1, 0)
+# 
+# cocNSDUH$RSK1 <- ifelse(cocNSDUH$RKFQRSKY == 1, 1, 0)
+# cocNSDUH$RSK2 <- ifelse(cocNSDUH$RKFQRSKY == 2, 1, 0)
+# cocNSDUH$RSK3 <- ifelse(cocNSDUH$RKFQRSKY == 3, 1, 0)
+# cocNSDUH$RSK4 <- ifelse(cocNSDUH$RKFQRSKY == 4, 1, 0)
+
+glmCOCdO <- svyglm(DEPNDCOC~LIFEHAL+AG1+AG2+AG3+AG4+AG5+AG6+NEWRACE2+EDUCCAT2+INCOME+IRSEX+IRMARIT+RSK1+RSK2+RSK3+RSK4+OPFLAG+STMFLAG+MRJFLAG+TRQFLAG+INHFLAG+SEDFLAG+PCPFLAG+ECSFLAG, design=desg, family=binomial(), subset=CATAG6 != 1 & COCFLAG !=0)
+glmCOCaO <- svyglm(ABUSECOC~LIFEHAL+AG1+AG2+AG3+AG4+AG5+AG6+NEWRACE2+EDUCCAT2+INCOME+IRSEX+IRMARIT+RSK1+RSK2+RSK3+RSK4+OPFLAG+STMFLAG+MRJFLAG+TRQFLAG+INHFLAG+SEDFLAG+PCPFLAG+ECSFLAG, design=desg, family=binomial(), subset=CATAG6 != 1 & COCFLAG !=0)
+
+glmCCDAY <- svyglm(CCDAY~LIFEHAL+CATAG6+NEWRACE2+EDUCCAT2+INCOME+IRSEX+IRMARIT+RKFQRSKY+OPFLAG+STMFLAG+MRJFLAG+TRQFLAG+INHFLAG+SEDFLAG+PCPFLAG+ECSFLAG, design=desg, subset=CATAG6 != 1 & COCFLAG !=0)
+
+cocNSDUH$COCd <- cocNSDUH$CCDAY
+cocNSDUH$Age <- cocNSDUH$CATAG6
+cocNSDUH$Race <- cocNSDUH$NEWRACE2
+cocNSDUH$Education <- cocNSDUH$EDUCCAT2
+cocNSDUH$Income <- cocNSDUH$INCOME
+cocNSDUH$Sex <- cocNSDUH$IRSEX
+cocNSDUH$MaritalStatus <- cocNSDUH$IRMARIT
+cocNSDUH$RiskyBehavior <- cocNSDUH$RKFQRSKY
+
+glmNAME <- (svyglm(CCDAY~LIFEHAL+Age+Race+Education+Income+Sex+MaritalStatus+RiskyBehavior+OPFLAG+STMFLAG+MRJFLAG+TRQFLAG+INHFLAG+SEDFLAG+PCPFLAG+ECSFLAG, design=desg, subset=CATAG6 != 1 & COCFLAG !=0))
+
+pR2(glmCCDAY)
+pR2(glmCCDAY)
+
+
+
+###############################
+#relative importance
+#################################
+#install.packages('relaimpo')
+library(relaimpo)
+relaimpoCCDAY <- calc.relimp(glmNAME, type = c("lmg"), rela = TRUE)
+plot(relaimpoCCDAY, main="Relative importance scores for days used cocaine in past year")
+#?plot
+
+#plot
+library(jtools)
+#svycor(~api00 + api99, design = dstrat, digits = 4, sig.stats = TRUE, bootn = 2000, mean1 = TRUE)
+corCCDAY <- svycor(CCDAY~LIFEHAL+Age+Race+Education+Income+Sex+MaritalStatus+RiskyBehavior+OPFLAG+STMFLAG+MRJFLAG+TRQFLAG+INHFLAG+SEDFLAG+PCPFLAG+ECSFLAG, design=desg, digits=2, singular.ok=TRUE, sig.stats=TRUE)#, mean1=TRUE) #bootn = 2000
+corCCDAY$cors
+cormat <- cor(cocDF[,-1])
+library(qgraph)
+qgraph(cormat, shape='circle', posCol='darkgreen', negCol='darkred', layout='groups', vsize=10)
+
+qgraph(cor(cocDF),layout="spring",labels=colnames(cocDF))
+
+for(x in 1:336187){
+  if(is.na(cocDFall[x,9])){
+    cocDFall <- cocDFall[-x,] }}
+
+for(x in 1:336362){
+  if(is.na(cocNSDUH[x,1082])){
+    cocNSDUH <- cocNSDUH[-x,] }}
+
+cocNSDUH %>% drop_na(RKFQRSKY)
+
+
+#cocDF <- subset(cocNSDUH, CATAG6 != 1 & COCFLAG !=0)# & is.na == FALSE)
+cocDF <- as.data.frame(cbind(cocDF$CCDAY, cocDF$LIFEHAL, cocDF$Age, cocDF$Race, cocDF$Education, cocDF$Income, cocDF$Sex, cocDF$MaritalStatus, cocDF$RiskyBehavior, cocDF$OPFLAG, cocDF$STMFLAG, cocDF$MRJFLAG, cocDF$TRQFLAG, cocDF$INHFLAG, cocDF$SEDFLAG, cocDF$PCPFLAG, cocDF$ECSFLAG))
+cocDF <- as.data.frame(cbind(cocNSDUH$ABODCOC, cocNSDUH$LIFEHAL, cocNSDUH$Age, cocNSDUH$Race, cocNSDUH$Education, cocNSDUH$Income, cocNSDUH$Sex, cocNSDUH$MaritalStatus, cocNSDUH$RiskyBehavior, cocNSDUH$OPFLAG, cocNSDUH$STMFLAG, cocNSDUH$MRJFLAG, cocNSDUH$TRQFLAG, cocNSDUH$INHFLAG, cocNSDUH$SEDFLAG, cocNSDUH$PCPFLAG, cocNSDUH$ECSFLAG))
+cocDFrc <- as.data.frame(cbind(cocNSDUH$ABODCOC, cocNSDUH$IRHALRC, cocNSDUH$Age, cocNSDUH$Race, cocNSDUH$Education, cocNSDUH$Income, cocNSDUH$Sex, cocNSDUH$MaritalStatus, cocNSDUH$RiskyBehavior, cocNSDUH$IROPRC, cocNSDUH$IRSTMRC, cocNSDUH$IRMJRC, cocNSDUH$IRTRNRC, cocNSDUH$IRINHRC, cocNSDUH$IRSEDRC, cocNSDUH$IRPCPRC, cocNSDUH$IRECSRC))
+#~VEREP , strata = ~VESTR , weights = ~NEWANALWT_C 
+cocDFall <- as.data.frame(cbind(cocNSDUH$ABODCOC, cocNSDUH$IRHALRC, cocNSDUH$Age, cocNSDUH$Race, cocNSDUH$Education, cocNSDUH$Income, cocNSDUH$Sex, cocNSDUH$MaritalStatus, cocNSDUH$RiskyBehavior, cocNSDUH$IROPRC, cocNSDUH$IRSTMRC, cocNSDUH$IRMJRC, cocNSDUH$IRTRNRC, cocNSDUH$IRINHRC, cocNSDUH$IRSEDRC, cocNSDUH$IRPCPRC, cocNSDUH$IRECSRC, cocNSDUH$VEREP, cocNSDUH$VESTR, cocNSDUH$NEWANALWT_C, cocNSDUH$COCFLAG, cocNSDUH$CCDAY))
+
+
+colnames(cocDFall) <- c('ABODcoc', "Halluc", 'Age', 'Race', 'Education', 'Income', 'Sex','Marriage', 'Risk', 'Opioid', 'Stim', 'MRJ', 'TRQ', 'INH', 'SED', 'PCP', 'ECS', "verep", "vestr", "ANALWT", "cocflag", "CCDAY")
+
+
+# library(GGally)
+# ggpairs(as.data.frame(cocDF[,-1]))
+# cor2pcor(cov(cocDF[,-1])
+
+n=17
+#install.packages("ppcor") #install ppcor package for computing partial correlations
+library(ppcor)
+Adj=round(matrix(pcor(cocDF)$estimate,n,n),2) #create adjacency matrix with partial correlations as weights
+Adj=ifelse((abs(Adj)<.10),0,Adj)#set all partial correlations with absolute value <0.10 to 0
+qgraph(Adj,layout="spring",labels=colnames(cocDF),edge.labels=T)
+
+n=17 #number of symptoms: 6 MD, 3 bridge symptoms and 6 GAD
+labels=c('dCocaine', "Halluc", 'Age', 'Race', 'Education', 'Income', 'Sex','Marriage', 'Risk Behav.', 'Opioid', 'Stim', 'MRJ', 'TRQ', 'INH', 'SED', 'PCP', 'ECS')
+groups=list(Demographics=3:9,Cocaine_d=1,GAD=c(2, 10:17))
+cocdata=matrix(pcor(cocDF)$estimate,n,n)
+qgraph(cocdata,filename="Figure 5",filetype="pdf",groups=groups,legend=F,labels=labels,color=c("lightblue","lightgreen","lightblue"))
+
+
+#install.packages('aspect')
+library(aspect)
+#corAspect(data, aspect = "aspectSum", level = "nominal", itmax = 100, eps = 1e-06, ...)
+coraspCOCrc <- corAspect(as.matrix(as.data.frame(cocDFrc)), aspect='aspectSMC', targvar=1, level=c("nominal", "ordinal", "ordinal", "nominal", "ordinal", "ordinal", "nominal", "nominal", "ordinal","ordinal","ordinal","ordinal","ordinal","ordinal","ordinal","ordinal","ordinal"))
+plot(coraspCOCrc, plot.type = "transplot")#, ylim = c(-3.5, 6))
+
+linealCOCrc <- lineals(as.matrix(as.data.frame(cocDFall[,1:17])), itmax = 100, eps = 1e-06, level=c("nominal", "ordinal", "ordinal", "nominal", "ordinal", "ordinal", "nominal", "nominal", "ordinal","ordinal","ordinal","ordinal","ordinal","ordinal","ordinal","ordinal","ordinal"))
+Rl <- linealCOCrc$cormat
+round(Rl, 3)
+plot(linealCOCrc, plot.type = "regplot", plot.var = c(1, 2))
+plot(linealCOCrc, plot.type = "regplot", plot.var = c(1, 5))
+plot(linealCOCrc, plot.type = "regplot", plot.var = c(1, 12))
+
+opmatrix <- linealCOCrc$scoremat
+cocNSDUHop <- cbind(cocDFall[,1:8], opmatrix[,9:17], cocDFall[,18:21])
+
+
+desg2 <- svydesign(id = ~verep, strata = ~vestr , weights = ~ANALWT, data = cocNSDUHop , nest = TRUE )
+#MUST BE RERUN ANYTIME DATA IN cocNSDUH IS CHANGED
+glmABODop <- (svyglm(ABODcoc~Halluc+Age+Race+Education+Income+Sex+Marriage+Risk+Opioid+Stim+MRJ+TRQ+INH+SED+PCP+ECS, design=desg2, subset=Age != 1 & cocflag !=0))
+summary(glmABODop)
+exp(coef(glmABODop))
+exp(confint(glmABODop))
+
+# names <- colnames(cocNSDUH$ABODCOC, cocNSDUH$IRHALRC, cocNSDUH$CATAG6, cocNSDUH$EDUCCAT2, cocNSDUH$INCOME, cocNSDUH$RKFQRSKY, cocNSDUH$IROPRC, cocNSDUH$IRSTMRC, cocNSDUH$IRMJRC, cocNSDUH$IRTRNRC, cocNSDUH$IRINHRC, cocNSDUH$IRSEDRC, cocNSDUH$IRPCPRC, cocNSDUH$IRECSRC, cocNSDUH$NEWRACE2, cocNSDUH$IRSEX, cocNSDUH$IRMARIT)
+smoothDF <- data.frame(cocNSDUH$CCDAY, cocNSDUH$COCFLAG, cocNSDUH$ABODCOC, cocNSDUH$IRHALRC, cocNSDUH$CATAG6, cocNSDUH$EDUCCAT2, cocNSDUH$INCOME, cocNSDUH$RKFQRSKY, cocNSDUH$IROPRC, cocNSDUH$IRSTMRC, cocNSDUH$IRMJRC, cocNSDUH$IRTRNRC, cocNSDUH$IRINHRC, cocNSDUH$IRSEDRC, cocNSDUH$IRPCPRC, cocNSDUH$IRECSRC, cocNSDUH$NEWRACE2, cocNSDUH$IRSEX, cocNSDUH$IRMARIT)
+smoothDF <- smoothDF[complete.cases(smoothDF), ]
+#glmCCDAY <- svyglm(CCDAY~LIFEHAL+CATAG6+NEWRACE2+EDUCCAT2+INCOME+IRSEX+IRMARIT+RKFQRSKY+OPFLAG+STMFLAG+MRJFLAG+TRQFLAG+INHFLAG+SEDFLAG+PCPFLAG+ECSFLAG, design=desg, subset=CATAG6 != 1 & COCFLAG !=0)
+lambda = c(10)
+smoothDF$cocNSDUH.IRHALRC <- smoothDF$cocNSDUH.IRHALRC + 1
+smoothDF$cocNSDUH.IROPRC <- smoothDF$cocNSDUH.IROPRC + 1 
+smoothDF$cocNSDUH.IRSTMRC <- smoothDF$cocNSDUH.IRSTMRC + 1
+smoothDF$cocNSDUH.IRMJRC <- smoothDF$cocNSDUH.IRMJRC + 1
+smoothDF$cocNSDUH.IRTRNRC <- smoothDF$cocNSDUH.IRTRNRC + 1
+smoothDF$cocNSDUH.IRINHRC <- smoothDF$cocNSDUH.IRINHRC + 1
+smoothDF$cocNSDUH.IRSEDRC <- smoothDF$cocNSDUH.IRSEDRC + 1
+smoothDF$cocNSDUH.IRPCPRC <- smoothDF$cocNSDUH.IRPCPRC + 1
+smoothDF$cocNSDUH.IRECSRC <- smoothDF$cocNSDUH.IRECSRC + 1
+smoothDF$cocNSDUH.IRMARIT <- smoothDF$cocNSDUH.IRMARIT + 1
+xmatrix <- data.matrix(cbind(smoothDF$cocNSDUH.IRHALRC, smoothDF$cocNSDUH.CATAG6, smoothDF$cocNSDUH.EDUCCAT2, smoothDF$cocNSDUH.INCOME, smoothDF$cocNSDUH.RKFQRSKY, smoothDF$cocNSDUH.IROPRC, smoothDF$cocNSDUH.IRSTMRC, smoothDF$cocNSDUH.IRMJRC, smoothDF$cocNSDUH.IRTRNRC, smoothDF$cocNSDUH.IRINHRC, smoothDF$cocNSDUH.IRSEDRC, smoothDF$cocNSDUH.IRPCPRC, smoothDF$cocNSDUH.IRECSRC))
+ymatrix <- data.matrix(cbind(smoothDF$cocNSDUH.NEWRACE2, smoothDF$cocNSDUH.IRSEX, smoothDF$cocNSDUH.IRMARIT))
+
+smoothABODCOC <- ordSmooth(xmatrix, smoothDF$cocNSDUH.CCDAY, ymatrix, model="linear", lambda=lambda)#, subset=smoothDF$cocNSDUH.CATAG6 != 1 & smoothDF$cocNSDUH.COCFLAG != 0, na.rm=TRUE)
+#x, y, u, z
+#ordinal predictors, response vector, cat predictors, met/cont predictors , model=logit, lambda
+
+
+ordinalDF <- smoothDF
+colnames(ordinalDF) <- c("dCOC", "COCflag", "ABODCOC", "HALrc", "Age", "Education", "Income", "RiskBehav", "OPrc", "STMrc", "MJrc", "TRNrc", "INHrc", "SEDrc", "PCPrc", "ECSrc", "Race", "Sex", "Marriage")
+#SchoolData$Grade<-recode(SchoolData$Grade,"5=6;6=7")
+library(car)
+ordinalDF$HALrc<-recode(ordinalDF$HALrc,"1=0;2=0.26525;3=2.23762;4=5.21225")
+ordinalDF$Age<-recode(ordinalDF$Age,"1=0;2=0.00131;3=0.31317;4=5.71005;5=0.66175;6=0.43866")
+ordinalDF$Education<-recode(ordinalDF$Education,"1=0;2=-0.36477;3=-0.65103;4=-0.78309;5=-0.78473")
+ordinalDF$Income<-recode(ordinalDF$Income,"1=0;2=-0.05310;3=-0.05319;4=0.05035")
+ordinalDF$RiskBehav<-recode(ordinalDF$RiskBehav,"1=0;2=-0.00826;3=0.35897;4=1.49394")
+ordinalDF$OPrc<-recode(ordinalDF$OPrc,"1=0;2=0.01521;3=1.33598;4=1.72954")
+ordinalDF$STMrc<-recode(ordinalDF$STMrc,"1=0;2=0.24261;3=9.58900;4=15.19233")
+ordinalDF$MJrc<-recode(ordinalDF$MJrc,"1=0;2=-0.17433;3=0.51060;4=0.94803")
+ordinalDF$TRNrc<-recode(ordinalDF$TRNrc,"1=0;2=0.24136;3=2.21611;4=5.87739")
+ordinalDF$INHrc<-recode(ordinalDF$INHrc,"1=0;2=0.03787;3=0.43502;4=2.06377")
+ordinalDF$SEDrc<-recode(ordinalDF$SEDrc,"1=0;2=0.19404;3=2.11819;4=7.53796")
+ordinalDF$PCPrc<-recode(ordinalDF$PCPrc,"1=0;2=3.51079;3=9.57669;4=21.23077")
+ordinalDF$ECSrc<-recode(ordinalDF$ECSrc,"1=0;2=1.41971;3=5.84916;4=7.54913")
+
+
+
+
+#likelihood
+fit12anova <- anova(fit1, fit2)
+###############
+#psuedo R2
+library(pscl)
+pR2(fit1)
+pR2(fit2)
+pR2(fit3)
+###############
+#Wald
+regTermTest(fit1, "LIFEX")
+
+
+
+#Recency vaars
+#op, stm, mrj, trq, inh, pcp, ecs, sed -9co #stm/meth
+
+glmCOCdRC <- svyglm(DEPNDCOC~IRHALRC+CATAG6+newRACE+EDUCCAT2+INCOME+IRSEX+IRMARIT+RKFQRSKY+IROPRC+IRSTMRC+IRMJRC+IRTRNRC+IRINHRC+IRPCPRC+IRECSRC+IRSEDRC, design=desg, family=binomial(), subset=CATAG6 != 1 & COCFLAG !=0)
+glmCOCaRC <- svyglm(ABUSECOC~IRHALRC+CATAG6+newRACE+EDUCCAT2+INCOME+IRSEX+IRMARIT+RKFQRSKY+IROPRC+IRSTMRC+IRMJRC+IRTRNRC+IRINHRC+IRPCPRC+IRECSRC+IRSEDRC, design=desg, family=binomial(), subset=CATAG6 != 1 & COCFLAG !=0)
+
+summary(glmCOCaRC)
+exp(coef(glmCOCaRC))
+exp(confint(glmCOCaRC))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+########################
+#####dependence criteria
+cocNSDUH$COCLOTTMz <- cocNSDUH$COCLOTTM
+cocNSDUH$COCLOTTMz[cocNSDUH$COCLOTTMz == 2] <- 0
+cocNSDUH$COCLOTTMz[cocNSDUH$COCLOTTMz > 1] <- 0
+
+cocNSDUH$COCLOTTMna <- cocNSDUH$COCLOTTM
+cocNSDUH$COCLOTTMna[cocNSDUH$COCLOTTMna == 2] <- 0
+cocNSDUH$COCLOTTMna[cocNSDUH$COCLOTTMna > 1] <- NA
+
+
+
+xtabs(~LIFEHAL+COCLOTTMz, +subset(cocNSDUH, CATAG6>1 & COCFLAG == 1))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#mydata$sum <- mydata$x1 + mydata$x2
+#creates two categories 
+#mydata$agecat <- ifelse(mydata$age > 70, c("older"), c("younger")) 
+#mydata$agecat[age > 45 & age <= 75] <- "Middle Aged"
+
+#health spending by census region
+# (ex. northeast $173 billion)
+svyby(~ depvar, ~ indepvar,
+      + subset(svydesign, AGE06X > 17), svytotal)
+
+#regional mean spending on health
+# (ex. northeast $4,171)
+svyby(~ TOTEXP06, ~ REGION06,
+      + subset(meps.tsl.dsgn, AGE06X > 17), svymean)
+#stratified by health status
+# (ex. northeast poor hlth $18,038)
+svyby(~ TOTEXP06, ~ REGION06 + RTHLTH53,
+      + subset(meps.tsl.dsgn, AGE06X > 17), svymean)
+#top quartile by health status
+# (ex. poor health $19,130)
+svyby(~ TOTEXP06, ~ RTHLTH53,
+      + design = subset(meps.tsl.dsgn, AGE06X > 17),
+      + FUN = svyquantile, quantiles = 0.75, ci = TRUE)
+
+#totals/means/quantiles in subpop
+#total % in each hlth stat & region
+svymean(~ interaction(cRTHLTH53, cREGION06),
+        + subset(meps.tsl.dsgn, AGE06X > 17),
+        + na.rm = TRUE)
+#repeat above with weighted counts
+svytotal(~ interaction(cRTHLTH53, cREGION06),
+         + subset(meps.tsl.dsgn, AGE06X > 17),
+         + na.rm = TRUE)
+
+
+
+# subpop example
+# calculate the means or proportions of RSKPKCIG by the levels of IRSEX and their SEs
+out = svyby(~factor(COCFLAG), ~IRSEX, design = desg , FUN=svymean, vartype=c("se","ci"), na.rm = TRUE) 
+coef(out)      #extracting the means
+SE(out)         #extracting the SEs of means
+confint(out)  # 95% confidence intervals of mean
+print(out)     #all results
+
+data(fpc)
+dfpc<-svydesign(id=~psuid,strat=~stratid,weight=~weight,data=fpc,nest=TRUE)
+dsub<-subset(dfpc,x>4)
+summary(dsub)
+svymean(~x,design=dsub)
+## These should give the same domain estimates and standard errors
+svyby(~x,~I(x>4),design=dfpc, svymean)
+summary(svyglm(x~I(x>4)+0,design=dfpc))
+data(api)
+dclus1<-svydesign(id=~dnum, weights=~pw, data=apiclus1, fpc=~fpc)
+rclus1<-as.svrepdesign(dclus1)
+svymean(~enroll, subset(dclus1, sch.wide=="Yes" & comp.imp=="Yes"))
+svymean(~enroll, subset(rclus1, sch.wide=="Yes" & comp.imp=="Yes"))
+
+
+
+
+
